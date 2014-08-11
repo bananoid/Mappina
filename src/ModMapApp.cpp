@@ -47,9 +47,9 @@ void ModMapApp::setup()
 {
   //Camera
   mCam.setPerspective( 60.0f, getWindowAspectRatio(), 5.0f, 3000.0f );
-  mEye = Vec3f( 0.0f, 0.0f, 500.0f );
+  mEye = Vec3f( 0.0f, 0.0f, -500.0f );
   mCenter = Vec3f( 0.0f, 0.0f, 0.0f );
-  mUp = Vec3f::yAxis();
+  mUp = Vec3f::yAxis() *-1;
   mCam.lookAt( mEye, mCenter, mUp );
   
   mFont = Font( "Arial", 120.0f );
@@ -105,7 +105,7 @@ void ModMapApp::draw()
   
   mSyphonOutA.publishScreen();
   
-  gl::drawString(   toString( getFrameRate() ) , Vec2f( getWindowWidth() - 140.0f, getWindowHeight()- 100.0f ), Color::white(), mFont);
+  gl::drawString(   toString( getFrameRate() ) , Vec2f( getWindowWidth()*.5 - 140.0f, getWindowHeight()*.5 - 100.0f ), Color::white(), mFont);
 
 }
 
