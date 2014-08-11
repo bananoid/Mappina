@@ -20,6 +20,10 @@
 
 #define WIDTH 1920
 #define HEIGHT 1080
+
+#define SYWIDTH 1920
+#define SYHEIGHT 1080
+
 #define RES_DEF_OBJ		CINDER_RESOURCE( ./, cube.obj, 128, DATA )
 
 using namespace ci;
@@ -38,6 +42,9 @@ class ModMapApp : public AppNative {
   osc::Listener mOSCListener;
   
   syphonServer mSyphonOutA;
+  gl::Fbo m_fboSy;
+  gl::TextureRef m_texSyRef;
+  
   Font mFont;
   float mOSCParam_speed;
   float mRotation;
@@ -67,9 +74,9 @@ void ModMapApp::setup()
   mEye = Vec3f( 0.0f, 0.0f, 3396.584);
   mCenter = Vec3f( 0.0f, 0.0f, 0.0f );
   mUp = Vec3f::yAxis();
-  mCam.lookAt( mEye, mCenter, mUp );
+  mCam.lookAt( mEye, mCenter, mUp);
   mCam.setNearClip(10000);
-//  mCam.setFarClip(0);
+  mCam.setFarClip(100);
   mFont = Font( "Arial", 120.0f );
   
   mSyphonOutA.setName("ModMap :: Camera A");
@@ -83,9 +90,20 @@ void ModMapApp::setup()
 //  mVBO = gl::VboMesh( mMesh );
   
   ObjLoader loader( loadResource( "./assets/cinderModMap001.obj" ) );
-//  ObjLoader loader( loadFile( "exa010.obj" ) );
+
   loader.load( &mMesh, true );
   mVBO = gl::VboMesh( mMesh );
+  
+  gl::Fbo::Format format2;
+  format2.enableDepthBuffer(false);
+  format2.enableColorBuffer(true, 1);
+  format2.setMinFilter(GL_LINEAR);
+  format2.setMagFilter(GL_LINEAR);
+  format2.setWrap(GL_CLAMP, GL_CLAMP);
+  format2.setColorInternalFormat(GL_RGBA16F_ARB);
+  m_fboSy = gl::Fbo(SYWIDTH, SYHEIGHT, format2);
+  m_texSyRef = gl::Texture::create(SYWIDTH, SYHEIGHT);
+  
 }
 
 void ModMapApp::keyDown( KeyEvent event ){
@@ -122,31 +140,61 @@ void ModMapApp::update()
     }
   }
   
-  mRotation = time * mOSCParam_speed ;
+  mRotation = sin( time * mOSCParam_speed ) * 1 ;
 }
 
 void ModMapApp::draw()
 {
-  gl::enableDepthWrite();
-	gl::enableDepthRead();
-	// clear out the window with black
-	gl::clear( Color( 0, 0, 0 ) );
-  gl::setMatrices( mCam );
+  bool fboRender = false;
   
-  gl::color(0, 0.3, 0.9);
-//  float r = getWindowWidth() * 0.1;
-//  gl::drawSolidEllipse(getWindowCenter(), 100, 100);
-  gl::pushMatrices();
-//  gl::rotate(Vec3f(0,mRotation,0));
-//  gl::scale(Vec3f(100,100,100));
-//  gl::drawSphere(Vec3f(0,0,0), r, 6);
-  gl::draw(mVBO);
-  gl::popMatrices();
   
-  mSyphonOutA.publishScreen();
+  gl::clear( Color( 0, 0, 0 ) );
   
-  gl::drawString(   toString( getFrameRate() ) , Vec2f( getWindowWidth()*.5 - 140.0f, getWindowHeight()*.5 - 100.0f ), Color::white(), mFont);
+  if (fboRender){
+    m_fboSy.bindFramebuffer();
+    
+    gl::setMatricesWindow(m_fboSy.getSize());
+    gl::setViewport(m_fboSy.getBounds());
+    GLenum bfrs[1] = {GL_COLOR_ATTACHMENT0_EXT};
+    glDrawBuffers(1, bfrs);
+    
+    gl::clear( Color( 0, 0, 0 ) );
+    gl::setMatrices( mCam );
+    
+    gl::color(0, 0.3, 0.9);
 
+    gl::pushMatrices();
+      gl::rotate(Vec3f(0,mRotation,0));
+      gl::draw(mVBO);
+    gl::popMatrices();
+    
+  //  mSyphonOutA.publishScreen();
+    
+    m_fboSy.unbindFramebuffer();
+    *m_texSyRef = m_fboSy.getTexture();
+    mSyphonOutA.publishTexture(m_texSyRef);
+ 
+    gl::setMatricesWindow(getWindowSize());
+    gl::setViewport(getWindowBounds());
+    gl::draw(m_fboSy.getTexture(), -Vec2f(0, 0 ));
+  
+    gl::drawString(   toString( getFrameRate() ) , Vec2f( getWindowWidth()*.5 - 140.0f, getWindowHeight()*.5 - 100.0f ), Color::white(), mFont);
+  
+  }else{
+    
+    gl::clear( Color( 0, 0, 0 ) );
+    gl::setMatrices( mCam );
+    
+    gl::color(0, 0.3, 0.9);
+    
+    gl::pushMatrices();
+    gl::rotate(Vec3f(0,mRotation,0));
+    gl::draw(mVBO);
+    gl::popMatrices();
+    
+    mSyphonOutA.publishScreen();
+    
+  }
 }
 
 CINDER_APP_NATIVE( ModMapApp, RendererGl )
