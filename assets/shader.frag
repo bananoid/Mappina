@@ -27,22 +27,27 @@ void main()
 {
 	vec4 textColor = gl_Color * texture2D(texture, gl_TexCoord[0].xy);
 	
+  float relPosScale = 0.002;
+  vec3 relPos2 = relPos * vec3(relPosScale,relPosScale,relPosScale);
+  
 	float x = sin(gl_TexCoord[0].x*100.0 + lineOff)+.3;
-	float y = sin(relPos.x*100.0 + lineOff)+.3;
+	float y = sin(relPos2.z*100.0 + lineOff)+.3;
 	vec4 zebraColor = vec4(y,y,y,1.);
 	
 	vec4 color2 = gl_FragCoord;
 	
 	vec4 uvColor = vec4(gl_TexCoord[0].x,0.,gl_TexCoord[0].y,1.);
 	
-	float cR = 100.0;
+	float cR = 50.0;
 	float circle = sin(uvColor.r*cR) * cos(uvColor.g*cR) * 4. + 0.5;
 	vec4 circleColor = vec4(circle,circle,circle,1.);
 	//gl_FragColor = zebraColor;
 	gl_FragColor = uvColor + zebraColor;
 	//gl_FragColor = circleColor;
-	gl_FragColor = vec4(pos.x,pos.y,pos.z,0.);
-	gl_FragColor = vec4(relPos.x,relPos.y,relPos.z,0.)+zebraColor;
-	
+
+	vec4 posColor = vec4(relPos2.x + 1., relPos2.x + 0.2, relPos2.z * 0.7 + 1.2 ,1.);
+	gl_FragColor = zebraColor;
+//	gl_FragColor = vec4(1.,0.,0.,1.);
+  gl_FragColor = (  posColor * 0.4 + vec4(0.7,0.4,0.3,1.)) - zebraColor * 0.5 ;
   
 }

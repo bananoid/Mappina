@@ -85,7 +85,7 @@ void ModMapApp::setup()
   
   //Setup OSC
   mOSCListener.setup( 3123 );
-  mOSCParam_speed = 20;
+  mOSCParam_speed = 6;
   
   //Setup Camera
   mCam.setPerspective( 31.417, getWindowAspectRatio(), 1000.0f, 6000.0f );
@@ -170,19 +170,19 @@ void ModMapApp::setupScene(){
     sObj.setup();
   }
   
-//  loader.load(0, &mMesh, true,true,false );
-//  mVBO = gl::VboMesh( mMesh );
 }
 
 void ModMapApp::drawScene(){
   SceneObj sObj;
+  float time = app::getElapsedSeconds();
+  mShader.bind();
   
+  mShader.uniform("lineOff", time * mOSCParam_speed );
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
     sObj.draw();
   }
   
-  mShader.bind();
   
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
     sObj = mPlatonics[i];
@@ -190,7 +190,6 @@ void ModMapApp::drawScene(){
   }
   
   mShader.unbind();
-  
 }
 
 void ModMapApp::keyDown( KeyEvent event ){
@@ -245,41 +244,23 @@ void ModMapApp::draw()
   
   gl::clear( ColorA( 0.3, 0.3, 0.3 ) );
   
-  
-  
   m_fboSy.bindFramebuffer();
   gl::clear( Color( 0, 0, 0 ) );
   
+  gl::setMatrices( mCam );
   
+//  gl::setMatricesWindow(m_fboSy.getSize() * Vec2i(1,-1));
+  gl::setViewport(m_fboSy.getBounds());
   
-  
-//  gl::pushMatrices();
-  
-    gl::setMatrices( mCam );
-  
-//      gl::setMatricesWindow(m_fboSy.getSize() * Vec2i(1,-1));
-    gl::setViewport(m_fboSy.getBounds());
-  
-
-  
-//      gl::rotate(Vec3f(0,mRotation,0));
-  
-//  mShader.bind();
-//  mShader.uniform("lineOff", (float)(time * 0.1));
-//  gl::draw(mVBO);
   drawScene();
-//  mShader.unbind();
   
   m_fboSy.unbindFramebuffer();
   
-//  gl::popMatrices();
-  
-  *m_texSyRef = m_fboSy.getDepthTexture();
-//  *m_texSyRef = m_fboSy.getTexture();
+//  *m_texSyRef = m_fboSy.getDepthTexture();
+  *m_texSyRef = m_fboSy.getTexture();
 
   mSyphonOutA.publishTexture(m_texSyRef);
   
-//  gl::pushMatrices();
   gl::setMatricesWindow(getWindowSize());
   gl::setViewport(Area( 0, 0, getWindowWidth(), getWindowHeight()));
   
@@ -288,8 +269,8 @@ void ModMapApp::draw()
     gl::draw(m_fboSy.getTexture(), Vec2f(0, 0));
   gl::popMatrices();
   
-//  gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
-//  gl::popMatrices();
+  gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
+
 }
 
 CINDER_APP_NATIVE( ModMapApp, RendererGl )

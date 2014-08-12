@@ -59,6 +59,7 @@
 varying vec4 Color;
 varying vec4 pos;
 varying vec3 relPos;
+varying vec3 vNormal;
 
 uniform float b;
 
@@ -68,6 +69,7 @@ void main()
 	vec3 normal = gl_Normal;
 	vec3 vertex = gl_Vertex.xyz ;
   
+  vNormal = normal;
   
 	//Transform vertex by modelview and projection matrices
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -82,7 +84,7 @@ void main()
 	//vec2 texPos = gl_TexCoord[0].xy;
 	//Color = vec4(gl_TexCoord[0].x,gl_TexCoord[0].y,1,1);
 	//Color = vec4(texPos.x,texPos.y,0,1.);
-	
+	Color = vec4(1.0,0.0,0.0,1.);
 	pos = gl_Position;
 	relPos = vertex;
 }
