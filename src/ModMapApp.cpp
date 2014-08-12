@@ -3,6 +3,7 @@
 #include "cinder/Utilities.h"
 #include "cinder/Font.h"
 #include "cinder/Camera.h"
+#include "cinder/params/Params.h"
 
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/Fbo.h"
@@ -17,6 +18,8 @@
 #include "OscListener.h"
 
 #include "MeshHelper.h"
+
+#include "SceneObj.h"
 
 #define WIDTH 1920
 #define HEIGHT 1080
@@ -51,12 +54,19 @@ class ModMapApp : public AppNative {
   Vec3f mEye;
   Vec3f mCenter;
   Vec3f mUp;
+  Quatf mSceneRotation;
   
   TriMesh			  mMesh;
 	gl::VboMesh		mVBO;
 	gl::GlslProg	mShader;
   
+  std::vector<SceneObj> mEsaboxes;
+  std::vector<SceneObj> mPlatonics;
+  
   void setupScene();
+  void drawScene();
+  
+  params::InterfaceGl mParams;
   
 };
 
@@ -69,6 +79,8 @@ void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
 void ModMapApp::setup()
 {
   //Setup Params
+  mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
+  mParams.addParam( "Scene Rotation", &mSceneRotation );
   mRotation = 0;
   
   //Setup OSC
@@ -106,16 +118,80 @@ void ModMapApp::setup()
   
   //Setup Shader
   mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
-
+  
 }
 
 void ModMapApp::setupScene(){
-  ObjLoader loader( loadResource( "./assets/cinderModMap001.obj" ));
+  ObjLoader loader( loadResource( "./assets/cinderModMap002.obj" ));
   
-  loader.load(&mMesh, true,true,false );
-  mVBO = gl::VboMesh( mMesh );
+  std::vector<ObjLoader::Group> groups = loader.getGroups();
+  size_t numGroups = loader.getNumGroups();
+  
+  console() << "setupScene >>> numGroups :: " << numGroups << "\n";
+  
+  ObjLoader::Group g;
+  
+  SceneObj sObj;
+  TriMesh mesh;
+  gl::VboMesh vbo;
+  Sphere boundingSphere;
+  
+  for(int i = 0; i < numGroups ; i++ ){
+    g = groups[i];
+    
+    
+    
+    loader.load(i, &mesh, true,true,true );
+    vbo = gl::VboMesh( mesh );
+    boundingSphere = Sphere::calculateBoundingSphere( mesh.getVertices() );
+    
+    sObj = SceneObj();
+    sObj.group = g;
+    sObj.vbo = vbo;
+    sObj.mesh = mesh;
+    sObj.boundingSphere = boundingSphere;
+    sObj.index = i;
+    
+    
+    console() << "\tgroup " << i << " \tname ::" << g.mName << "\t\tmcenter :" << boundingSphere.getCenter() << "\n";
+    
+    if(g.mName.find("platonic") == 0){
+
+      sObj.objType = 1;
+      mPlatonics.push_back(sObj);
+      
+    }else{
+      
+      sObj.objType = 0;
+      mEsaboxes.push_back(sObj);
+      
+    }
+    
+    sObj.setup();
+  }
+  
+//  loader.load(0, &mMesh, true,true,false );
+//  mVBO = gl::VboMesh( mMesh );
 }
 
+void ModMapApp::drawScene(){
+  SceneObj sObj;
+  
+  for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
+    sObj = mEsaboxes[i];
+    sObj.draw();
+  }
+  
+  mShader.bind();
+  
+  for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
+    sObj = mPlatonics[i];
+    sObj.draw();
+  }
+  
+  mShader.unbind();
+  
+}
 
 void ModMapApp::keyDown( KeyEvent event ){
   if( event.getChar() == 'o' ) {
@@ -151,12 +227,18 @@ void ModMapApp::update()
     }
   }
   
+  SceneObj sObj;
+  for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
+    sObj = mPlatonics[i];
+    sObj.update();
+  }
+  
   mRotation = sin( time * mOSCParam_speed * 1) * 2;
 }
 
 void ModMapApp::draw()
 {
-  float time = app::getElapsedSeconds();
+//  float time = app::getElapsedSeconds();
   
   gl::enableDepthWrite();
 	gl::enableDepthRead();
@@ -171,7 +253,7 @@ void ModMapApp::draw()
   
   
   
-  gl::pushMatrices();
+//  gl::pushMatrices();
   
     gl::setMatrices( mCam );
   
@@ -180,16 +262,17 @@ void ModMapApp::draw()
   
 
   
-      gl::rotate(Vec3f(0,mRotation,0));
+//      gl::rotate(Vec3f(0,mRotation,0));
   
 //  mShader.bind();
 //  mShader.uniform("lineOff", (float)(time * 0.1));
-  gl::draw(mVBO);
+//  gl::draw(mVBO);
+  drawScene();
 //  mShader.unbind();
   
   m_fboSy.unbindFramebuffer();
   
-  gl::popMatrices();
+//  gl::popMatrices();
   
   *m_texSyRef = m_fboSy.getDepthTexture();
 //  *m_texSyRef = m_fboSy.getTexture();
