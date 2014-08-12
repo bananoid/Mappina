@@ -56,12 +56,14 @@ class ModMapApp : public AppNative {
 	gl::VboMesh		mVBO;
 	gl::GlslProg	mShader;
   
+  void setupScene();
+  
 };
 
 void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
   settings->setWindowSize(WIDTH*.5,HEIGHT*.5);
 	settings->setFrameRate(60.f);
-  settings->enableHighDensityDisplay();
+//  settings->enableHighDensityDisplay();
 }
 
 void ModMapApp::setup()
@@ -79,13 +81,12 @@ void ModMapApp::setup()
   mCenter = Vec3f( 0.0f, 0.0f, 0.0f );
   mUp = Vec3f::yAxis();
   mCam.lookAt( mEye, mCenter, mUp);
+  
+  //Setup Font
   mFont = Font( "Arial", 120.0f );
   
   //Setup VBO
-  ObjLoader loader( loadResource( "./assets/cinderModMap001.obj" ));
-
-  loader.load( &mMesh, true );
-  mVBO = gl::VboMesh( mMesh );
+  setupScene();
   
   //Setup FBO
   gl::Fbo::Format format2;
@@ -107,6 +108,14 @@ void ModMapApp::setup()
   mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
 
 }
+
+void ModMapApp::setupScene(){
+  ObjLoader loader( loadResource( "./assets/cinderModMap001.obj" ));
+  
+  loader.load(&mMesh, true,true,false );
+  mVBO = gl::VboMesh( mMesh );
+}
+
 
 void ModMapApp::keyDown( KeyEvent event ){
   if( event.getChar() == 'o' ) {
@@ -149,64 +158,55 @@ void ModMapApp::draw()
 {
   float time = app::getElapsedSeconds();
   
-  bool fboRender = true;
-  
   gl::enableDepthWrite();
 	gl::enableDepthRead();
   
-  gl::clear( ColorA( 0, 0, 0 ) );
+  gl::clear( ColorA( 0.3, 0.3, 0.3 ) );
   
-  if (fboRender){
-    
-    m_fboSy.bindFramebuffer();
   
-    gl::setMatricesWindow(m_fboSy.getSize() * Vec2i(1,-1));
-    gl::setViewport(m_fboSy.getBounds());
-    
-//    GLenum bfrs[1] = {GL_COLOR_ATTACHMENT0_EXT};
-//    glDrawBuffers(1, bfrs);
-    
-    gl::clear( Color( 0, 0, 0 ) );
-    glDisable( GL_CULL_FACE );
+  
+  m_fboSy.bindFramebuffer();
+  gl::clear( Color( 0, 0, 0 ) );
+  
+  
+  
+  
+  gl::pushMatrices();
+  
     gl::setMatrices( mCam );
-    
-    gl::pushMatrices();
-      gl::rotate(Vec3f(0,mRotation,0));
-      mShader.bind();
-      mShader.uniform("lineOff", (float)(time * 0.1));
-      gl::draw(mVBO);
-      mShader.unbind();
-    gl::popMatrices();
-    
-    m_fboSy.unbindFramebuffer();
-    
-    *m_texSyRef = m_fboSy.getDepthTexture();
-//    *m_texSyRef = m_fboSy.getTexture();
   
-    mSyphonOutA.publishTexture(m_texSyRef);
-    
-    gl::setMatricesWindow(getWindowSize());
-    gl::setViewport(Area( 0, 0, getWindowWidth(), getWindowHeight()));
+//      gl::setMatricesWindow(m_fboSy.getSize() * Vec2i(1,-1));
+    gl::setViewport(m_fboSy.getBounds());
+  
+
+  
+      gl::rotate(Vec3f(0,mRotation,0));
+  
+//  mShader.bind();
+//  mShader.uniform("lineOff", (float)(time * 0.1));
+  gl::draw(mVBO);
+//  mShader.unbind();
+  
+  m_fboSy.unbindFramebuffer();
+  
+  gl::popMatrices();
+  
+  *m_texSyRef = m_fboSy.getDepthTexture();
+//  *m_texSyRef = m_fboSy.getTexture();
+
+  mSyphonOutA.publishTexture(m_texSyRef);
+  
+//  gl::pushMatrices();
+  gl::setMatricesWindow(getWindowSize());
+  gl::setViewport(Area( 0, 0, getWindowWidth(), getWindowHeight()));
+  
+  gl::pushMatrices();
     gl::scale(Vec3f(0.5,0.5,0.5));
     gl::draw(m_fboSy.getTexture(), Vec2f(0, 0));
+  gl::popMatrices();
   
-  }else{
-    
-    gl::clear( Color( 0, 0, 0 ) );
-    gl::setMatrices( mCam );
-    
-    gl::pushMatrices();
-      gl::rotate(Vec3f(0,mRotation,0));
-      mShader.bind();
-      gl::draw(mVBO);
-      mShader.unbind();
-    gl::popMatrices();
-    
-    mSyphonOutA.publishScreen();
-    
-  }
-  
-  gl::drawString(   toString( getFrameRate() ) , Vec2f( 0, 0 ), Color::white(), mFont);
+//  gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
+//  gl::popMatrices();
 }
 
 CINDER_APP_NATIVE( ModMapApp, RendererGl )
