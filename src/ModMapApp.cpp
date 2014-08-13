@@ -49,6 +49,7 @@ class ModMapApp : public AppNative {
   Font mFont;
   float mOSCParam_speed;
   float mRotation;
+  float lineOff;
   
   CameraPersp mCam;
   Vec3f mEye;
@@ -68,6 +69,9 @@ class ModMapApp : public AppNative {
   
   params::InterfaceGl mParams;
   
+  float mDeltaTime;
+  float lastElapsedTime;
+  
 };
 
 void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
@@ -82,6 +86,7 @@ void ModMapApp::setup()
   mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
   mParams.addParam( "Scene Rotation", &mSceneRotation );
   mRotation = 0;
+  lineOff =0;
   
   //Setup OSC
   mOSCListener.setup( 3123 );
@@ -119,6 +124,9 @@ void ModMapApp::setup()
   //Setup Shader
   mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
   
+  //TIME SETUP
+  mDeltaTime = 0;
+  lastElapsedTime = app::getElapsedSeconds();
 }
 
 void ModMapApp::setupScene(){
@@ -172,39 +180,6 @@ void ModMapApp::setupScene(){
   
 }
 
-void ModMapApp::drawScene(){
-  SceneObj sObj;
-  float time = app::getElapsedSeconds();
-  mShader.bind();
-  
-  mShader.uniform("lineOff", time * mOSCParam_speed );
-  for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
-    sObj = mEsaboxes[i];
-    sObj.draw();
-  }
-  
-  
-  for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
-    sObj = mPlatonics[i];
-    sObj.draw();
-  }
-  
-  mShader.unbind();
-}
-
-void ModMapApp::keyDown( KeyEvent event ){
-  if( event.getChar() == 'o' ) {
-		fs::path path = getOpenFilePath();
-		if( ! path.empty() ) {
-			ObjLoader loader( loadFile( path ) );
-			loader.load( &mMesh, true );
-			mVBO = gl::VboMesh( mMesh );
-			console() << "path" << path;
-      console() << "Total verts: " << mMesh.getVertices().size() << std::endl;
-		}
-	}
-}
-
 void ModMapApp::mouseDown( MouseEvent event )
 {
 }
@@ -213,7 +188,12 @@ void ModMapApp::update()
 {
   float time = app::getElapsedSeconds();
   
-  while( mOSCListener.hasWaitingMessages() ) {
+  mDeltaTime = time - lastElapsedTime;
+  lastElapsedTime = time;
+  
+//  console() << "time " << time << " delta" << mDeltaTime << "\n" ;
+  
+  if( mOSCListener.hasWaitingMessages() ) {
 		osc::Message message;
 		mOSCListener.getNextMessage( &message );
     
@@ -232,7 +212,9 @@ void ModMapApp::update()
     sObj.update();
   }
   
+  
   mRotation = sin( time * mOSCParam_speed * 1) * 2;
+  lineOff += mDeltaTime * mOSCParam_speed *.4;
 }
 
 void ModMapApp::draw()
@@ -271,6 +253,38 @@ void ModMapApp::draw()
   
   gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
 
+}
+
+void ModMapApp::drawScene(){
+  SceneObj sObj;
+  
+  mShader.bind();
+  
+  mShader.uniform("lineOff", lineOff );
+  for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
+    sObj = mEsaboxes[i];
+    sObj.draw();
+  }
+  
+  for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
+    sObj = mPlatonics[i];
+    sObj.draw();
+  }
+  
+  mShader.unbind();
+}
+
+void ModMapApp::keyDown( KeyEvent event ){
+  if( event.getChar() == 'o' ) {
+		fs::path path = getOpenFilePath();
+		if( ! path.empty() ) {
+			ObjLoader loader( loadFile( path ) );
+			loader.load( &mMesh, true );
+			mVBO = gl::VboMesh( mMesh );
+			console() << "path" << path;
+      console() << "Total verts: " << mMesh.getVertices().size() << std::endl;
+		}
+	}
 }
 
 CINDER_APP_NATIVE( ModMapApp, RendererGl )

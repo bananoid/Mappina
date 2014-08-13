@@ -22,7 +22,7 @@ void SceneObj::update(){
 void SceneObj::draw(){
   
   float time = app::getElapsedSeconds();
-  float rot = time * 100;
+  float rot = time * 50;
 
   Vec3f center = boundingSphere.getCenter();
   
@@ -31,7 +31,7 @@ void SceneObj::draw(){
   if(objType == 1){
   
     gl::translate(center);
-    gl::rotate( Vec3f( rot , rot *.5 , 0 ) );
+    gl::rotate( Vec3f( rot , rot *.2 , 0 ) );
     gl::translate(center * -1);
     
   }
