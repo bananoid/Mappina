@@ -50,6 +50,8 @@ class ModMapApp : public AppNative {
   float mOSCParam_speed;
   float mRotation;
   float lineOff;
+  float zDepthMult;
+  float zDepthAdd;
   
   CameraPersp mCam;
   Vec3f mEye;
@@ -91,6 +93,8 @@ void ModMapApp::setup()
   mParams.addParam( "Scene Rotation", &mSceneRotation );
   mRotation = 0;
   lineOff = 0;
+  zDepthMult = 1;
+  zDepthAdd = 0;
   
   //Setup OSC
   mOSCListener.setup( 3123 );
@@ -248,6 +252,11 @@ void ModMapApp::update()
       if (message.getAddress().compare("/ModMap/speed") == 0)
       {
         mOSCParam_speed = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/zDepthMult") == 0 ){
+        zDepthMult = message.getArgAsFloat(i);
+        
+      }else if( message.getAddress().compare("/ModMap/zDepthAdd") == 0 ){
+        zDepthAdd = message.getArgAsFloat(i);
       }
     }
   }
@@ -306,9 +315,11 @@ void ModMapApp::drawScene(){
   
   mShader.bind();
   
-  
   mShader.uniform("WIN_SCALE", Vec2f(WIDTH,HEIGHT) );
-  //mShader.uniform("lineOff", lineOff );
+  mShader.uniform("lineOff", lineOff );
+  mShader.uniform("zDepthMult", zDepthMult );
+  mShader.uniform("zDepthAdd", zDepthAdd );
+  
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
     sObj.draw();

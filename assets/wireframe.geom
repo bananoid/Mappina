@@ -1,6 +1,7 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_EXT_geometry_shader4 : enable
+
 varying in vec3 vertWorldPos[3];
 varying in vec3 vertWorldNormal[3];
 varying out vec3 worldNormal;
