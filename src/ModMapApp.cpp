@@ -72,6 +72,10 @@ class ModMapApp : public AppNative {
   float mDeltaTime;
   float lastElapsedTime;
   
+  void loadShader(fs::path path = fs::path());
+  fs::path mLoadedShaderPath;
+  bool shaderDebugMode;
+  float lastShaderReloadElapsedTime;
 };
 
 void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
@@ -122,15 +126,48 @@ void ModMapApp::setup()
   mSyphonOutA.setName("ModMap :: Camera A");
   
   //Setup Shader
-  //mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
-
-	mShader = gl::GlslProg(loadResource("./assets/wireframe.vert"), loadResource("./assets/wireframe.frag"), loadResource("./assets/wireframe.geom"), GL_TRIANGLES, GL_TRIANGLE_STRIP, 6);
+  shaderDebugMode = false;
+  lastShaderReloadElapsedTime = app::getElapsedSeconds();
+  loadShader();
 
   //TIME SETUP
   mDeltaTime = 0;
   lastElapsedTime = app::getElapsedSeconds();
 }
 
+void ModMapApp::loadShader(fs::path path){
+  if(path.empty() and !mLoadedShaderPath.empty()){
+    path = mLoadedShaderPath;
+  }
+  
+  try {
+    if(! path.empty() ){
+      
+      string pathDir = getPathDirectory(path.string());
+      string fileName = getPathFileName(path.string());
+      std::vector<string> splitName = split(fileName, "." );
+      
+      string vertPath = pathDir + splitName[0] + ".vert";
+      string geomPath = pathDir + splitName[0] + ".geom";
+      string fragPath = pathDir + splitName[0] + ".frag";
+      
+//      console() << "shader path :: " << vertPath <<  "\n";
+      
+      mShader = gl::GlslProg(loadFile(vertPath), loadFile(fragPath), loadFile(geomPath), GL_TRIANGLES, GL_TRIANGLE_STRIP, 6);
+      mLoadedShaderPath = path;
+      shaderDebugMode = true;
+      
+    }else{
+      mShader = gl::GlslProg(loadResource("./assets/wireframe.vert"), loadResource("./assets/wireframe.frag"), loadResource("./assets/wireframe.geom"), GL_TRIANGLES, GL_TRIANGLE_STRIP, 6);
+    }
+  } catch (gl::GlslProgCompileExc e) {
+     console() << e.what() << std::endl;
+     mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
+  } catch(...){
+     mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
+  }
+	
+}
 void ModMapApp::setupScene(){
   ObjLoader loader( loadResource( "./assets/cinderModMap002.obj" ));
   
@@ -148,8 +185,6 @@ void ModMapApp::setupScene(){
   
   for(int i = 0; i < numGroups ; i++ ){
     g = groups[i];
-    
-    
     
     loader.load(i, &mesh, true,true,true );
     vbo = gl::VboMesh( mesh );
@@ -192,6 +227,15 @@ void ModMapApp::update()
   
   mDeltaTime = time - lastElapsedTime;
   lastElapsedTime = time;
+  
+  if(shaderDebugMode){
+    float timeOut = time - lastShaderReloadElapsedTime;
+    if (timeOut > 1) {
+//      console() << "shader reload timeout";
+      loadShader();
+      lastShaderReloadElapsedTime = time;
+    }
+  }
   
 //  console() << "time " << time << " delta" << mDeltaTime << "\n" ;
   
@@ -280,15 +324,24 @@ void ModMapApp::drawScene(){
 
 void ModMapApp::keyDown( KeyEvent event ){
   if( event.getChar() == 'o' ) {
+//		fs::path path = getOpenFilePath();
+//		if( ! path.empty() ) {
+//			ObjLoader loader( loadFile( path ) );
+//			loader.load( &mMesh, true );
+//			mVBO = gl::VboMesh( mMesh );
+//			console() << "path" << path;
+//      console() << "Total verts: " << mMesh.getVertices().size() << std::endl;
+//		}
+	}else if( event.getChar() == 'a' ) {
 		fs::path path = getOpenFilePath();
+    
 		if( ! path.empty() ) {
-			ObjLoader loader( loadFile( path ) );
-			loader.load( &mMesh, true );
-			mVBO = gl::VboMesh( mMesh );
-			console() << "path" << path;
-      console() << "Total verts: " << mMesh.getVertices().size() << std::endl;
+			loadShader(path);
 		}
-	}
+	}else if( event.getChar() == 'q'){
+    loadShader();
+  }
+  
 }
 
 CINDER_APP_NATIVE( ModMapApp, RendererGl )

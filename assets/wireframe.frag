@@ -31,6 +31,6 @@ void main() {
   dist2 *= 0.04;
   vec4 fadeColor = vec4(0,0.4,0.9,1.0) * dist2.x + vec4(0.0,0.1,0.5,1.0) * dist2.y + vec4(0.0,0.2,0.5,1.0) * dist2.z;
   vec4 wireframeColor = vec4(vec3(edgeIntensity),1.);
-  gl_FragColor = vec4(vec3(0.0),1.) + wireframeColor * vec4(0.2,0.5,1.,1.) + fadeColor;
-  
+  gl_FragColor = vec4(vec3(0.0),1.) + wireframeColor * vec4(0.6,0.5,1.,1.) + fadeColor;
+
 }
