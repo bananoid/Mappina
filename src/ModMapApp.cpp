@@ -86,7 +86,7 @@ void ModMapApp::setup()
   mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
   mParams.addParam( "Scene Rotation", &mSceneRotation );
   mRotation = 0;
-  lineOff =0;
+  lineOff = 0;
   
   //Setup OSC
   mOSCListener.setup( 3123 );
@@ -122,8 +122,10 @@ void ModMapApp::setup()
   mSyphonOutA.setName("ModMap :: Camera A");
   
   //Setup Shader
-  mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
-  
+  //mShader = gl::GlslProg( loadResource( "./assets/shader.vert" ), loadResource( "./assets/shader.frag" ) );
+
+	mShader = gl::GlslProg(loadResource("./assets/wireframe.vert"), loadResource("./assets/wireframe.frag"), loadResource("./assets/wireframe.geom"), GL_TRIANGLES, GL_TRIANGLE_STRIP, 6);
+
   //TIME SETUP
   mDeltaTime = 0;
   lastElapsedTime = app::getElapsedSeconds();
@@ -260,7 +262,9 @@ void ModMapApp::drawScene(){
   
   mShader.bind();
   
-  mShader.uniform("lineOff", lineOff );
+  
+  mShader.uniform("WIN_SCALE", Vec2f(WIDTH,HEIGHT) );
+  //mShader.uniform("lineOff", lineOff );
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
     sObj.draw();
