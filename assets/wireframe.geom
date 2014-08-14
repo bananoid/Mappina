@@ -23,11 +23,13 @@ void main(void)
   worldNormal = vertWorldNormal[0];
   gl_Position = gl_PositionIn[0];
   EmitVertex();
+
   dist = vec3(0,area/length(v1),0);
   worldPos = vertWorldPos[1];
   worldNormal = vertWorldNormal[1];
   gl_Position = gl_PositionIn[1];
   EmitVertex();
+
   dist = vec3(0,0,area/length(v2));
   worldPos = vertWorldPos[2];
   worldNormal = vertWorldNormal[2];
