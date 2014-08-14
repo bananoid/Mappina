@@ -9,8 +9,8 @@ uniform mat4 cameraPV;
 uniform mat4 normalToWorld;
 
 void main() {
-	vec3 normal = gl_Normal;
-	vec3 vertex = gl_Vertex.xyz ;
+  vec3 normal = gl_Normal;
+  vec3 vertex = gl_Vertex.xyz ;
 
   vertWorldPos = (objToWorld * vec4(vertex,1.0)).xyz;
   vertWorldNormal = (normalToWorld * vec4(normal,1.0)).xyz;
