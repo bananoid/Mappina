@@ -53,6 +53,8 @@ class ModMapApp : public AppNative {
   float zDepthMult;
   float zDepthAdd;
   float internalObjectIndex;
+  float perlinNoiseTime;
+  float perlinNoiseTimeSpeed;
   
   CameraPersp mCam;
   Vec3f mEye;
@@ -92,6 +94,9 @@ void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
 
 void ModMapApp::setup()
 {
+  perlinNoiseTime = 0;
+  perlinNoiseTimeSpeed = 1;
+  
   //Setup Params
   mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
   mParams.addParam( "Scene Rotation", &mSceneRotation );
@@ -144,8 +149,6 @@ void ModMapApp::setup()
   lastElapsedTime = app::getElapsedSeconds();
   
 }
-
-
 
 void ModMapApp::loadShader(fs::path path){
   if(path.empty() and !mLoadedShaderPath.empty()){
@@ -246,6 +249,8 @@ void ModMapApp::update()
   
   mDeltaTime = time - lastElapsedTime;
   lastElapsedTime = time;
+
+  perlinNoiseTime += mDeltaTime * perlinNoiseTimeSpeed;
   
   if(shaderDebugMode){
     float timeOut = time - lastShaderReloadElapsedTime;
@@ -350,6 +355,8 @@ void ModMapApp::drawScene(){
   mShader.uniform("lineOff", lineOff );
   mShader.uniform("zDepthMult", zDepthMult );
   mShader.uniform("zDepthAdd", zDepthAdd );
+  mShader.uniform("perlinNoiseTime", perlinNoiseTime );
+  
   
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];

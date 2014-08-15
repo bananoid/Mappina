@@ -2,6 +2,9 @@
 #extension GL_EXT_gpu_shader4 : enable
 varying vec3 worldPos;
 varying vec3 worldNormal;
+
+varying vec3 perlinNoise;
+
 noperspective varying vec3 dist;
 uniform vec3 cameraPos;
 uniform vec3 lightDir;
@@ -12,6 +15,7 @@ uniform float zDepthMult;
 uniform float zDepthAdd;
 
 uniform float wireThik;
+
 void main() {
   vec3 dist2 = vec3(dist.x,dist.y,dist.z) * 0.3;
   // determine frag distance to closest edge
@@ -29,6 +33,8 @@ void main() {
   //vec4 specular = vec4(0.0);
   //edgeIntensity = 0.01;
 
+  vec4 perlinNoiseColor = vec4( vec3(perlinNoise.x) ,1.);
+
   vec4 zDepthColor = vec4(vec3(1.0-(worldPos.z * 400 * zDepthMult) + 0.8 + zDepthAdd)  ,1.0);
   //gl_FragColor = zDepthColor;
 
@@ -39,5 +45,7 @@ void main() {
   vec4 wireframeColor = vec4(vec3(edgeIntensity),1.);
   gl_FragColor = zDepthColor * (vec4(vec3(0.0),1.) + wireframeColor * vec4(0.6,0.5,1.,1.) + fadeColor);
   //gl_FragColor = zDepthColor;
+
+  gl_FragColor *= perlinNoiseColor ;
 
 }

@@ -4,6 +4,8 @@
 
 varying in vec3 vertWorldPos[3];
 varying in vec3 vertWorldNormal[3];
+varying in vec3 vertPerlinNoise[3];
+varying vec3 perlinNoise;
 varying out vec3 worldNormal;
 varying out vec3 worldPos;
 uniform vec2 WIN_SCALE;
@@ -23,18 +25,21 @@ void main(void)
   worldPos = vertWorldPos[0];
   worldNormal = vertWorldNormal[0];
   gl_Position = gl_PositionIn[0];
+  perlinNoise = vertPerlinNoise[0];
   EmitVertex();
 
   dist = vec3(0,area/length(v1),0);
   worldPos = vertWorldPos[1];
   worldNormal = vertWorldNormal[1];
   gl_Position = gl_PositionIn[1];
+  perlinNoise = vertPerlinNoise[1];
   EmitVertex();
 
   dist = vec3(0,0,area/length(v2));
   worldPos = vertWorldPos[2];
   worldNormal = vertWorldNormal[2];
   gl_Position = gl_PositionIn[2];
+  perlinNoise = vertPerlinNoise[2];
   EmitVertex();
   EndPrimitive();
 }
