@@ -24,10 +24,18 @@ public:
   enum { TYPE_BOX=0, TYPE_INTERNAL };
   
 	SceneObj();
+  bool isInitialized;
+  
   TriMesh mesh;
   gl::VboMesh vbo;
   Sphere boundingSphere;
   ObjLoader::Group group;
+  
+  SceneObj *replaceObj;
+  
+  float randomScale;
+  void updateRandomScale();
+  
   int index;
   int objType;
   

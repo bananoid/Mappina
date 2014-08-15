@@ -52,6 +52,7 @@ class ModMapApp : public AppNative {
   float lineOff;
   float zDepthMult;
   float zDepthAdd;
+  float internalObjectIndex;
   
   CameraPersp mCam;
   Vec3f mEye;
@@ -63,8 +64,9 @@ class ModMapApp : public AppNative {
 	gl::VboMesh		mVBO;
 	gl::GlslProg	mShader;
   
-  std::vector<SceneObj> mEsaboxes;
-  std::vector<SceneObj> mPlatonics;
+  std::vector<SceneObj*> mEsaboxes;
+  std::vector<SceneObj*> mPlatonics;
+  std::vector<SceneObj*> mInternalObjs;
   
   void setupScene();
   void drawScene();
@@ -78,6 +80,8 @@ class ModMapApp : public AppNative {
   fs::path mLoadedShaderPath;
   bool shaderDebugMode;
   float lastShaderReloadElapsedTime;
+  
+  SceneObj* getCurrentInternalObjFor(int inx, SceneObj* so);
 };
 
 void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
@@ -95,6 +99,7 @@ void ModMapApp::setup()
   lineOff = 0;
   zDepthMult = 1;
   zDepthAdd = 0;
+  internalObjectIndex = 8;
   
   //Setup OSC
   mOSCListener.setup( 3123 );
@@ -137,7 +142,10 @@ void ModMapApp::setup()
   //TIME SETUP
   mDeltaTime = 0;
   lastElapsedTime = app::getElapsedSeconds();
+  
 }
+
+
 
 void ModMapApp::loadShader(fs::path path){
   if(path.empty() and !mLoadedShaderPath.empty()){
@@ -173,7 +181,7 @@ void ModMapApp::loadShader(fs::path path){
 	
 }
 void ModMapApp::setupScene(){
-  ObjLoader loader( loadResource( "./assets/cinderModMap002.obj" ));
+  ObjLoader loader( loadResource( "./assets/cinderModMap003.obj" ));
   
   std::vector<ObjLoader::Group> groups = loader.getGroups();
   size_t numGroups = loader.getNumGroups();
@@ -182,7 +190,7 @@ void ModMapApp::setupScene(){
   
   ObjLoader::Group g;
   
-  SceneObj sObj;
+  SceneObj* sObj;
   TriMesh mesh;
   gl::VboMesh vbo;
   Sphere boundingSphere;
@@ -194,29 +202,36 @@ void ModMapApp::setupScene(){
     vbo = gl::VboMesh( mesh );
     boundingSphere = Sphere::calculateBoundingSphere( mesh.getVertices() );
     
-    sObj = SceneObj();
-    sObj.group = g;
-    sObj.vbo = vbo;
-    sObj.mesh = mesh;
-    sObj.boundingSphere = boundingSphere;
-    sObj.index = i;
-    
+    sObj = new SceneObj();
+    sObj->group = g;
+    sObj->vbo = vbo;
+    sObj->mesh = mesh;
+    sObj->boundingSphere = boundingSphere;
+    sObj->index = i;
     
     console() << "\tgroup " << i << " \tname ::" << g.mName << "\t\tmcenter :" << boundingSphere.getCenter() << "\n";
     
     if(g.mName.find("platonic") == 0){
 
-      sObj.objType = 1;
+      sObj->objType = 1;
+      sObj->setup();
       mPlatonics.push_back(sObj);
       
-    }else{
+    }else if(g.mName.find("Object") == 0){
       
-      sObj.objType = 0;
+      sObj->objType = 2;
+      sObj->setup();
+      mInternalObjs.push_back(sObj);
+    }
+    else{
+      
+      sObj->objType = 0;
+      sObj->setup();
       mEsaboxes.push_back(sObj);
       
     }
     
-    sObj.setup();
+    
   }
   
 }
@@ -257,19 +272,35 @@ void ModMapApp::update()
         
       }else if( message.getAddress().compare("/ModMap/zDepthAdd") == 0 ){
         zDepthAdd = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/internalObjectIndex") == 0 ){
+        internalObjectIndex = message.getArgAsFloat(i);
       }
+      
     }
   }
   
-  SceneObj sObj;
+  SceneObj* sObj;
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
     sObj = mPlatonics[i];
-    sObj.update();
+    sObj->replaceObj = getCurrentInternalObjFor(i,sObj);
+    sObj->update();
   }
-  
   
   mRotation = sin( time * mOSCParam_speed * 1) * 2;
   lineOff += mDeltaTime * mOSCParam_speed *.4;
+}
+
+SceneObj* ModMapApp::getCurrentInternalObjFor(int inx, SceneObj* so){
+  int objIx = (int)(internalObjectIndex * mInternalObjs.size());
+  objIx = max(0,objIx);
+  objIx = min(objIx,(int)mInternalObjs.size()-1);
+  
+  
+  SceneObj* rso = mInternalObjs[objIx];
+  if(rso != so->replaceObj){
+    so->updateRandomScale();
+  }
+  return rso;
 }
 
 void ModMapApp::draw()
@@ -311,7 +342,7 @@ void ModMapApp::draw()
 }
 
 void ModMapApp::drawScene(){
-  SceneObj sObj;
+  SceneObj* sObj;
   
   mShader.bind();
   
@@ -322,12 +353,12 @@ void ModMapApp::drawScene(){
   
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
-    sObj.draw();
+    sObj->draw();
   }
   
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
     sObj = mPlatonics[i];
-    sObj.draw();
+    sObj->draw();
   }
   
   mShader.unbind();
