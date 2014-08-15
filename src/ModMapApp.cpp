@@ -55,6 +55,8 @@ class ModMapApp : public AppNative {
   float internalObjectIndex;
   float perlinNoiseTime;
   float perlinNoiseTimeSpeed;
+  float perlinNoiseSize;
+  float perlinNoiseAmp;
   
   CameraPersp mCam;
   Vec3f mEye;
@@ -96,6 +98,8 @@ void ModMapApp::setup()
 {
   perlinNoiseTime = 0;
   perlinNoiseTimeSpeed = 1;
+  perlinNoiseSize = 1;
+  perlinNoiseAmp = 1;
   
   //Setup Params
   mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
@@ -109,6 +113,7 @@ void ModMapApp::setup()
   //Setup OSC
   mOSCListener.setup( 3123 );
   mOSCParam_speed = 6;
+  
   
   //Setup Camera
   mCam.setPerspective( 31.417, getWindowAspectRatio(), 1000.0f, 6000.0f );
@@ -250,7 +255,7 @@ void ModMapApp::update()
   mDeltaTime = time - lastElapsedTime;
   lastElapsedTime = time;
 
-  perlinNoiseTime += mDeltaTime * perlinNoiseTimeSpeed;
+  
   
   if(shaderDebugMode){
     float timeOut = time - lastShaderReloadElapsedTime;
@@ -279,10 +284,17 @@ void ModMapApp::update()
         zDepthAdd = message.getArgAsFloat(i);
       }else if( message.getAddress().compare("/ModMap/internalObjectIndex") == 0 ){
         internalObjectIndex = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/perlinNoiseTimeSpeed") == 0 ){
+        perlinNoiseTimeSpeed = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/perlinNoiseSize") == 0 ){
+        perlinNoiseSize = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/perlinNoiseAmp") == 0 ){
+        perlinNoiseAmp = message.getArgAsFloat(i);
       }
-      
     }
   }
+
+  perlinNoiseTime += mDeltaTime * perlinNoiseTimeSpeed;
   
   SceneObj* sObj;
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
@@ -356,7 +368,8 @@ void ModMapApp::drawScene(){
   mShader.uniform("zDepthMult", zDepthMult );
   mShader.uniform("zDepthAdd", zDepthAdd );
   mShader.uniform("perlinNoiseTime", perlinNoiseTime );
-  
+  mShader.uniform("perlinNoiseSize", perlinNoiseSize );
+  mShader.uniform("perlinNoiseAmp", perlinNoiseAmp );
   
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
