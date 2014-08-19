@@ -80,7 +80,7 @@ class ModMapApp : public AppNative {
   void setupScene();
   void drawScene();
   
-  params::InterfaceGl mParams;
+	params::InterfaceGlRef	mParams;
   
   float mDeltaTime;
   float lastElapsedTime;
@@ -104,7 +104,7 @@ void ModMapApp::setup()
   perlinNoiseTime = 0;
   perlinNoiseTimeSpeed = 1;
   perlinNoiseSize = 1;
-  perlinNoiseAmp = 1;
+  perlinNoiseAmp = 0.2;
   
   intObjRotation = 0;
   intObjRotationSpeed = 1;
@@ -112,8 +112,11 @@ void ModMapApp::setup()
   intObjScale = 1;
   
   //Setup Params
-  mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
-  mParams.addParam( "Scene Rotation", &mSceneRotation );
+//  mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
+  mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( Vec2i( 200, 400 ) ) );
+  
+  mParams->addParam( "Scene Rotation", &mSceneRotation );
+  
   mRotation = 0;
   lineOff = 0;
   zDepthMult = 1;
@@ -289,7 +292,6 @@ void ModMapApp::update()
         mOSCParam_speed = message.getArgAsFloat(i);
       }else if( message.getAddress().compare("/ModMap/zDepthMult") == 0 ){
         zDepthMult = message.getArgAsFloat(i);
-        
       }else if( message.getAddress().compare("/ModMap/zDepthAdd") == 0 ){
         zDepthAdd = message.getArgAsFloat(i);
       }else if( message.getAddress().compare("/ModMap/internalObjectIndex") == 0 ){
@@ -373,6 +375,7 @@ void ModMapApp::draw()
   
   gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
 
+  mParams->draw();
 }
 
 void ModMapApp::drawScene(){
@@ -387,6 +390,9 @@ void ModMapApp::drawScene(){
   mShader.uniform("perlinNoiseTime", perlinNoiseTime );
   mShader.uniform("perlinNoiseSize", perlinNoiseSize );
   mShader.uniform("perlinNoiseAmp", perlinNoiseAmp );
+  
+  mShader.uniform("wireAmp", 1.0f );
+  mShader.uniform("fillAmp", 0.0f );
   
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];

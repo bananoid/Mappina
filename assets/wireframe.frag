@@ -14,7 +14,8 @@ uniform float isSingleColor;
 uniform float zDepthMult;
 uniform float zDepthAdd;
 
-uniform float wireThik;
+uniform float wireAmp = 1.0;
+uniform float fillAmp = 1.0;
 
 void main() {
   vec3 dist2 = vec3(dist.x,dist.y,dist.z) * 0.3;
@@ -43,7 +44,7 @@ void main() {
   dist2 *= 0.04;
   vec4 fadeColor = vec4(0,0.4,0.9,1.0) * dist2.x + vec4(0.0,0.1,0.5,1.0) * dist2.y + vec4(0.0,0.2,0.5,1.0) * dist2.z;
   vec4 wireframeColor = vec4(vec3(edgeIntensity),1.);
-  gl_FragColor = zDepthColor * (vec4(vec3(0.0),1.) + wireframeColor * vec4(0.6,0.5,1.,1.) + fadeColor);
+  gl_FragColor = zDepthColor * (vec4(vec3(0.0),1.) + wireAmp * wireframeColor * vec4(0.0,0.5,1.,1.) + fadeColor * fillAmp);
   //gl_FragColor = zDepthColor;
 
   gl_FragColor *= perlinNoiseColor ;
