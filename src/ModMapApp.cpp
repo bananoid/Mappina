@@ -58,6 +58,11 @@ class ModMapApp : public AppNative {
   float perlinNoiseSize;
   float perlinNoiseAmp;
   
+  float intObjRotation;
+  float intObjRotationSpeed;
+  
+  float intObjScale;
+  
   CameraPersp mCam;
   Vec3f mEye;
   Vec3f mCenter;
@@ -100,6 +105,11 @@ void ModMapApp::setup()
   perlinNoiseTimeSpeed = 1;
   perlinNoiseSize = 1;
   perlinNoiseAmp = 1;
+  
+  intObjRotation = 0;
+  intObjRotationSpeed = 1;
+  
+  intObjScale = 1;
   
   //Setup Params
   mParams = mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
@@ -268,7 +278,7 @@ void ModMapApp::update()
   
 //  console() << "time " << time << " delta" << mDeltaTime << "\n" ;
   
-  if( mOSCListener.hasWaitingMessages() ) {
+  while( mOSCListener.hasWaitingMessages() ) {
 		osc::Message message;
 		mOSCListener.getNextMessage( &message );
     
@@ -290,16 +300,23 @@ void ModMapApp::update()
         perlinNoiseSize = message.getArgAsFloat(i);
       }else if( message.getAddress().compare("/ModMap/perlinNoiseAmp") == 0 ){
         perlinNoiseAmp = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/intObjRotationSpeed") == 0 ){
+        intObjRotationSpeed = message.getArgAsFloat(i);
+      }else if( message.getAddress().compare("/ModMap/intObjScale") == 0 ){
+        intObjScale = message.getArgAsFloat(i);
       }
     }
   }
 
   perlinNoiseTime += mDeltaTime * perlinNoiseTimeSpeed;
+  intObjRotation += mDeltaTime * intObjRotationSpeed * 100;
   
   SceneObj* sObj;
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
     sObj = mPlatonics[i];
     sObj->replaceObj = getCurrentInternalObjFor(i,sObj);
+    sObj->rotation = intObjRotation;
+    sObj->scale = intObjScale;
     sObj->update();
   }
   

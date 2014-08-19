@@ -13,6 +13,9 @@
 
 #include "cinder/Sphere.h"
 
+#include "cinder/Perlin.h"
+#include "cinder/Rand.h"
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -36,11 +39,24 @@ public:
   float randomScale;
   void updateRandomScale();
   
+  float scale;
+  
+  float perlinScale;
+  float perlinScaleAmp;
+  float perlinScaleSpeed;
+  float perlinScaleFreq;
+  
+  float rotation;
+  Vec3f rotationDir;
+  
   int index;
   int objType;
   
   void setup();
   void update();
   void draw();
+  
+  Perlin	mPerlin;
+  
 };
 
