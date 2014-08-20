@@ -63,6 +63,9 @@ class ModMapApp : public AppNative {
   
   float intObjScale;
   
+  bool enableOSC = true;
+  bool enablePreview = true;
+  
   CameraPersp mCam;
   Vec3f mEye;
   Vec3f mCenter;
@@ -101,13 +104,13 @@ void ModMapApp::prepareSettings(cinder::app::AppBasic::Settings *settings){
 
 void ModMapApp::setup()
 {
-  perlinNoiseTime = 0;
-  perlinNoiseTimeSpeed = 1;
-  perlinNoiseSize = 1;
-  perlinNoiseAmp = 0.2;
+  perlinNoiseTime = 9;
+  perlinNoiseTimeSpeed = 0.1;
+  perlinNoiseSize = 0.6;
+  perlinNoiseAmp = 1.0;
   
   intObjRotation = 0;
-  intObjRotationSpeed = 1;
+  intObjRotationSpeed = 0.1;
   
   intObjScale = 1;
   
@@ -115,18 +118,21 @@ void ModMapApp::setup()
 //  mParams = params::InterfaceGl( "ModMap", Vec2i( 225, 200 ) );
   mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( Vec2i( 200, 400 ) ) );
   
-  mParams->addParam( "Scene Rotation", &mSceneRotation );
+  
+  mParams->addParam( "enable Preview", &enablePreview );
+  mParams->addParam( "enable OSC", &enableOSC );
+  
   
   mRotation = 0;
   lineOff = 0;
   zDepthMult = 1;
   zDepthAdd = 0;
-  internalObjectIndex = 8;
+  
+  internalObjectIndex =0.8;
   
   //Setup OSC
   mOSCListener.setup( 3123 );
   mOSCParam_speed = 6;
-  
   
   //Setup Camera
   mCam.setPerspective( 31.417, getWindowAspectRatio(), 1000.0f, 6000.0f );
@@ -281,35 +287,37 @@ void ModMapApp::update()
   
 //  console() << "time " << time << " delta" << mDeltaTime << "\n" ;
   
-  while( mOSCListener.hasWaitingMessages() ) {
-		osc::Message message;
-		mOSCListener.getNextMessage( &message );
+  if (enableOSC) {
     
-    for (int i = 0; i < message.getNumArgs(); i++)
-    {
-      if (message.getAddress().compare("/ModMap/speed") == 0)
+    while( mOSCListener.hasWaitingMessages() ) {
+      osc::Message message;
+      mOSCListener.getNextMessage( &message );
+      
+      for (int i = 0; i < message.getNumArgs(); i++)
       {
-        mOSCParam_speed = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/zDepthMult") == 0 ){
-        zDepthMult = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/zDepthAdd") == 0 ){
-        zDepthAdd = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/internalObjectIndex") == 0 ){
-        internalObjectIndex = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/perlinNoiseTimeSpeed") == 0 ){
-        perlinNoiseTimeSpeed = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/perlinNoiseSize") == 0 ){
-        perlinNoiseSize = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/perlinNoiseAmp") == 0 ){
-        perlinNoiseAmp = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/intObjRotationSpeed") == 0 ){
-        intObjRotationSpeed = message.getArgAsFloat(i);
-      }else if( message.getAddress().compare("/ModMap/intObjScale") == 0 ){
-        intObjScale = message.getArgAsFloat(i);
+        if (message.getAddress().compare("/ModMap/speed") == 0)
+        {
+          mOSCParam_speed = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/zDepthMult") == 0 ){
+          zDepthMult = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/zDepthAdd") == 0 ){
+          zDepthAdd = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/internalObjectIndex") == 0 ){
+          internalObjectIndex = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/perlinNoiseTimeSpeed") == 0 ){
+          perlinNoiseTimeSpeed = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/perlinNoiseSize") == 0 ){
+          perlinNoiseSize = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/perlinNoiseAmp") == 0 ){
+          perlinNoiseAmp = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/intObjRotationSpeed") == 0 ){
+          intObjRotationSpeed = message.getArgAsFloat(i);
+        }else if( message.getAddress().compare("/ModMap/intObjScale") == 0 ){
+          intObjScale = message.getArgAsFloat(i);
+        }
       }
     }
   }
-
   perlinNoiseTime += mDeltaTime * perlinNoiseTimeSpeed;
   intObjRotation += mDeltaTime * intObjRotationSpeed * 100;
   
@@ -327,7 +335,9 @@ void ModMapApp::update()
 }
 
 SceneObj* ModMapApp::getCurrentInternalObjFor(int inx, SceneObj* so){
+  
   int objIx = (int)(internalObjectIndex * mInternalObjs.size());
+  
   objIx = max(0,objIx);
   objIx = min(objIx,(int)mInternalObjs.size()-1);
   
@@ -365,15 +375,18 @@ void ModMapApp::draw()
 
   mSyphonOutA.publishTexture(m_texSyRef);
   
-  gl::setMatricesWindow(getWindowSize());
-  gl::setViewport(Area( 0, 0, getWindowWidth(), getWindowHeight()));
+  if (enablePreview) {
+    
+    gl::setMatricesWindow(getWindowSize());
+    gl::setViewport(Area( 0, 0, getWindowWidth(), getWindowHeight()));
+    
+    gl::pushMatrices();
+      gl::scale(Vec3f(0.5,0.5,0.5));
+      gl::draw(m_fboSy.getTexture(), Vec2f(0, 0));
+    gl::popMatrices();
   
-  gl::pushMatrices();
-    gl::scale(Vec3f(0.5,0.5,0.5));
-    gl::draw(m_fboSy.getTexture(), Vec2f(0, 0));
-  gl::popMatrices();
-  
-  gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
+  }
+//  gl::drawString( toString( getAverageFps() ) , Vec2f( 20, 400 ), Color::white(), mFont);
 
   mParams->draw();
 }
@@ -392,12 +405,16 @@ void ModMapApp::drawScene(){
   mShader.uniform("perlinNoiseAmp", perlinNoiseAmp );
   
   mShader.uniform("wireAmp", 1.0f );
-  mShader.uniform("fillAmp", 0.0f );
+  mShader.uniform("fillAmp", 1.0f );
+  
+  mShader.uniform("vertexMove", 0.0f );
   
   for(std::vector<SceneObj>::size_type i = 0; i != mEsaboxes.size(); i++) {
     sObj = mEsaboxes[i];
     sObj->draw();
   }
+  
+  mShader.uniform("vertexMove", 1.0f );
   
   for(std::vector<SceneObj>::size_type i = 0; i != mPlatonics.size(); i++) {
     sObj = mPlatonics[i];

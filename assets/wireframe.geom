@@ -10,6 +10,7 @@ varying out vec3 worldNormal;
 varying out vec3 worldPos;
 uniform vec2 WIN_SCALE;
 noperspective varying vec3 dist;
+noperspective varying vec3 activeVetex;
 void main(void)
 {
   // taken from 'Single-Pass Wireframe Rendering'
@@ -22,20 +23,23 @@ void main(void)
   float area = abs(v1.x*v2.y - v1.y * v2.x);
 
   dist = vec3(area/length(v0),0,0);
+  activeVetex = vec3(1,0,0);
   worldPos = vertWorldPos[0];
   worldNormal = vertWorldNormal[0];
-  gl_Position = gl_PositionIn[0];
+  gl_Position = gl_PositionIn[0] ;
   perlinNoise = vertPerlinNoise[0];
   EmitVertex();
 
   dist = vec3(0,area/length(v1),0);
+  activeVetex = vec3(0,1,0);
   worldPos = vertWorldPos[1];
   worldNormal = vertWorldNormal[1];
-  gl_Position = gl_PositionIn[1];
+  gl_Position = gl_PositionIn[1] ;
   perlinNoise = vertPerlinNoise[1];
   EmitVertex();
 
   dist = vec3(0,0,area/length(v2));
+  activeVetex = vec3(0,0,1);
   worldPos = vertWorldPos[2];
   worldNormal = vertWorldNormal[2];
   gl_Position = gl_PositionIn[2];

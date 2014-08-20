@@ -15,6 +15,8 @@ uniform mat4 objToWorld;
 uniform mat4 cameraPV;
 uniform mat4 normalToWorld;
 
+uniform float vertexMove = 0;
+
 void calcPerlinNoise(){
   vec3 vertex = (gl_ModelViewProjectionMatrix * gl_Vertex).xyz;
   float perlinNoiseSize = 0.001 * perlinNoiseSize;
@@ -44,6 +46,8 @@ void main() {
   vertWorldPos = vertex;
   vertWorldNormal = (normalToWorld * vec4(normal,1.0)).xyz;
   gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+  gl_Position += vec4(normal, 0.0) * (sin(gl_Vertex + perlinNoiseTime*1) * 0.5 + 0.5) * vertexMove * 0 ;
   gl_FrontColor = color;
 
 }
